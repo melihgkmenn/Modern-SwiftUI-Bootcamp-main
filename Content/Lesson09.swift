@@ -39,15 +39,18 @@ class CoreDataManager {
 
 
 
-import SwiftUI
-
 struct ContentView: View {
     @Environment(\.managedObjectContext) var managedObjectContext
+    @State private var searchText = ""
+    @FetchRequest private var notes: FetchedResults<Note>
 
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Note.date, ascending: false)],
-        animation: .default
-    ) var notes: FetchedResults<Note>
+    init() {
+        let sortDescriptor = NSSortDescriptor(keyPath: \Note.date, ascending: false)
+        _notes = FetchRequest(
+            sortDescriptors: [sortDescriptor],
+            predicate: nil
+        )
+    }
 
     var body: some View {
         NavigationView {
@@ -66,6 +69,10 @@ struct ContentView: View {
                 .onDelete(perform: deleteNote)
             }
             .navigationTitle("Not Defteri")
+            .searchable(text: $searchText, prompt: "Notlarda Ara")
+            .onChange(of: searchText) { newValue in
+                notes.nsPredicate = newValue.isEmpty ? nil : NSPredicate(format: "title CONTAINS[c] %@", newValue)
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(destination: NewNoteView()) {
